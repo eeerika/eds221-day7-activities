@@ -1,0 +1,61 @@
+---
+title: "Day 7 Activities: Bird joins"
+author: "Erika"
+date: "2022-08-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+```
+
+## Joins on birds
+```{r}
+bird_observations <- read_csv(here("data","knb-lter-cap", "52_pp52_birds_1.csv"))
+sites <- read_csv(here("data","knb-lter-cap", "52_pp52_sites_1.csv"))
+surveys <- read_csv(here("data","knb-lter-cap", "52_pp52_surveys_1.csv"))
+taxalist <- read_csv(here("data","knb-lter-cap", "52_pp52_taxalist_1.csv"))
+
+birds_subset <- bird_observations %>%
+  filter(species_id %in% c("BHCO", "RWBL") & site_id %in% c("LI-W", "NU-C"))
+```
+
+```{r}
+birds_left <- birds_subset %>%
+  left_join(sites, birds_subset, by = "site_id") %>%
+  left_join(taxalist, birds_subset, by = "species_id")
+```
+
+```{r}
+birds_full <- birds_subset %>%
+  full_join(sites, birds_subset, by = "site_id")
+```
+
+```{r}
+birds_inner <- birds_subset %>%
+  inner_join(taxalist, birds_subset, by = "species_id")
+
+birds_left_test <- birds_subset %>%
+  left_join(taxalist, birds_subset, by = "species_id")
+```
+
+## Data wrangling and visualization with birds
+
+```{r}
+birds_wrangle <- bird_observations %>%
+  rename(bird_obs_notes = notes) %>%
+  left_join(sites, bird_observations, by = "site_id") %>%
+  left_join(taxalist, bird_observations, by = "species_id") %>%
+  left_join(surveys, bird_observations, by = c("survey_id", "site_id")) %>%
+  select(survey_date, common_name, park_name, bird_count) %>%
+  mutate(survey_month = as.factor(lubridate::month(survey_date))) %>%
+  dplyr::relocate(survey_month, .after = survey_date) %>%
+  group_by(park_name, survey_month) %>%
+  summarize(total_birds = n()) %>%
+  filter(park_name %in% c("Lindo", "Orme", "Palomino", "Sonrisa"))
+  
+```
+
